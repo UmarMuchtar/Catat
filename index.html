@@ -94,7 +94,7 @@ S.rec.forEach(r=>{const[y,m]=r.last.split('-').map(Number);for(let c=y*12+m;c<=c
 if(ds>today())break;S.tx.push({id:uid(),t:r.t,k:r.k,w:r.w,n:r.n,c:r.c||'(rutin)',d:ds});r.last=yy+'-'+p2(mm+1);ch=1}});if(ch)sv()}
 
 /* ===== Views ===== */
-const rowT=t=>`<div class=row onclick="form('${t.id}')"><div><b>${esc(t.k)}</b><br><small>${esc(t.w)}${t.c?' · '+esc(t.c):''}</small></div><b class=${t.t}>${t.t=='in'?'+':'-'}${fmt(t.n)}</b></div>`;
+const rowT=t=>`<div class=row onclick="openF('${t.id}')"><div><b>${esc(t.k)}</b><br><small>${esc(t.w)}${t.c?' · '+esc(t.c):''}</small></div><b class=${t.t}>${t.t=='in'?'+':'-'}${fmt(t.n)}</b></div>`;
 const spent=()=>{const m=today().slice(0,7),s={};S.tx.filter(x=>x.t=='out'&&x.d.startsWith(m)).forEach(x=>s[x.k]=(s[x.k]||0)+x.n);return s};
 function vHome(){const td=today(),T=S.tx.filter(x=>x.d==td),i=sum(T,'in'),o=sum(T,'out'),bm=sum(S.tx.filter(x=>x.d.startsWith(td.slice(0,7))),'out'),sp=spent(),
 w=Object.entries(S.bud).filter(([k,b])=>(sp[k]||0)>=b*.8).map(([k])=>k);
@@ -121,16 +121,16 @@ return `<div style="padding:10px 0;border-bottom:1px solid var(--bg)"><div class
 function vSet(){return `<h2>Pengaturan</h2>
 <div class=card><h3>Kategori</h3>${S.kat.map((k,i)=>`<div class=row><span>${esc(k.n)} <small>${JN(k.t)}</small></span><button class=x onclick="del('kat',${i})">✕</button></div>`).join('')}<input id=kn placeholder="Nama kategori baru"><select id=kt><option value=out>Pengeluaran<option value=in>Pemasukan</select><button class=btn onclick="addK()">Tambah kategori</button></div>
 <div class=card><h3>Dompet</h3>${S.dom.map((d,i)=>`<div class=row><span>${esc(d)}</span><button class=x onclick="del('dom',${i})">✕</button></div>`).join('')}<input id=dn placeholder="Nama dompet baru"><button class=btn onclick="addD()">Tambah dompet</button></div>
-<div class=card><h3>Transaksi berulang</h3>${S.rec.map(r=>`<div class=row onclick="form('${r.id}',1)"><span>${esc(r.k)} <small>tiap tgl ${r.d}${r.c?' · '+esc(r.c):''}</small></span><b class=${r.t}>${fmt(r.n)}</b></div>`).join('')||'<small>Belum ada (mis. Gaji, Kos, Langganan).</small>'}<button class=btn onclick="form(0,1)">+ Tambah rutin</button></div>
+<div class=card><h3>Transaksi berulang</h3>${S.rec.map(r=>`<div class=row onclick="openF('${r.id}',1)"><span>${esc(r.k)} <small>tiap tgl ${r.d}${r.c?' · '+esc(r.c):''}</small></span><b class=${r.t}>${fmt(r.n)}</b></div>`).join('')||'<small>Belum ada (mis. Gaji, Kos, Langganan).</small>'}<button class=btn onclick="openF(0,1)">+ Tambah rutin</button></div>
 <div class=card><h3>Keamanan & data</h3><button class="btn s" onclick="chPin()">Ganti PIN</button><button class=btn onclick="exp()">Export / Backup Excel</button><label class="btn s">Import file Excel<input type=file accept=".xlsx,.xls" hidden onchange="imp(this.files[0]);this.value=''"></label><button class="btn s" onclick="lockScreen()">Kunci sekarang</button></div>`}
 function addK(){const n=$('#kn').value.trim();if(!n)return;S.kat.push({n,t:$('#kt').value});sv();render()}
 function addD(){const n=$('#dn').value.trim();if(!n)return;S.dom.push(n);sv();render()}
 function del(w,i){if(w=='dom'&&S.dom.length<2)return toast('Minimal 1 dompet');if(!confirm('Hapus item ini?'))return;S[w].splice(i,1);sv();render()}
 function render(){if(!unlocked)return;const V={home:vHome,list:vList,rep:vRep,bud:vBud,set:vSet}[v]();
-$('#app').innerHTML=`<div class=w>${V}</div><button class=fab onclick="form()">+</button><nav>${[['home','🏠','Beranda'],['list','🧾','Transaksi'],['rep','📊','Laporan'],['bud','🎯','Budget'],['set','⚙️','Atur']].map(([k,i,t])=>`<button class="${v==k?'a':''}" onclick="v='${k}';render();scrollTo(0,0)"><i>${i}</i>${t}</button>`).join('')}</nav>`}
+$('#app').innerHTML=`<div class=w>${V}</div><button class=fab onclick="openF()">+</button><nav>${[['home','🏠','Beranda'],['list','🧾','Transaksi'],['rep','📊','Laporan'],['bud','🎯','Budget'],['set','⚙️','Atur']].map(([k,i,t])=>`<button class="${v==k?'a':''}" onclick="v='${k}';render();scrollTo(0,0)"><i>${i}</i>${t}</button>`).join('')}</nav>`}
 
 /* ===== Form transaksi ===== */
-function form(id,rec){const x=id&&(rec?S.rec:S.tx).find(a=>a.id==id);F=x?{...x,n:String(x.n),d:String(x.d),rec}:{id:'',t:'out',n:'',k:'',w:S.dom[0],d:rec?'1':today(),c:'',rec};dF()}
+function openF(id,rec){const x=id&&(rec?S.rec:S.tx).find(a=>a.id==id);F=x?{...x,n:String(x.n),d:String(x.d),rec}:{id:'',t:'out',n:'',k:'',w:S.dom[0],d:rec?'1':today(),c:'',rec};dF()}
 function dF(){const ks=S.kat.filter(k=>k.t==F.t);if(!ks.some(k=>k.n==F.k))F.k=ks[0]?ks[0].n:'';const on=c=>`background:var(--${c});color:#fff;border-color:var(--${c})`;
 $('#sh').style.display='flex';$('#sh').innerHTML=`<div><div class=seg><button style="${F.t=='in'?on('g'):''}" onclick="F.t='in';dF()">Pemasukan</button><button style="${F.t=='out'?on('r'):''}" onclick="F.t='out';dF()">Pengeluaran</button></div>
 <div class="amt ${F.t}" id=amt>${fmt(+F.n||0)}</div><div class=pad style="gap:6px">${[1,2,3,4,5,6,7,8,9,'000',0,'⌫'].map(k=>`<button style="height:52px" onclick="np('${k}')">${k}</button>`).join('')}</div>
