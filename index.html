@@ -34,6 +34,7 @@ nav i{display:block;font-size:20px;font-style:normal}
 .chips .a{background:var(--g);color:#fff;border-color:var(--g)}
 .dh{display:flex;justify-content:space-between;margin:14px 2px 4px;font-weight:700;color:var(--m);font-size:14px}
 .warn{background:#fff4e0;border:1px solid #f0c36d;border-radius:12px;padding:12px;margin-bottom:12px;font-size:14px}
+.sb{display:flex;height:14px;border-radius:8px;overflow:hidden;margin:8px 0}.sb i{display:block;height:100%}hr{border:0;border-top:1px solid var(--l);margin:14px 0}
 table{width:100%;border-collapse:collapse}td{padding:8px 4px;border-bottom:1px solid var(--bg);font-size:14px}td:last-child,td:nth-child(3){text-align:right}
 #toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#14201a;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:30;pointer-events:none}
 </style></head><body>
@@ -111,10 +112,13 @@ return Object.entries(g).map(([d,l])=>`<div class=dh><span>${new Date(d+'T00:00'
 const setF=f=>{fl=f;render()};
 function vList(){return `<h2>Transaksi</h2><div class=chips>${[['hari','Hari Ini'],['minggu','Minggu Ini'],['bulan','Bulan Ini'],['all','Semua']].map(([k,t])=>`<button class="${fl==k?'a':''}" onclick="setF('${k}')">${t}</button>`).join('')}</div><input placeholder="🔍 Cari catatan / kategori" value="${esc(q)}" oninput="q=this.value;$('#lst').innerHTML=lst()" style="margin:0 0 4px"><div id=lst>${lst()}</div>`}
 const COL=['#c2362b','#e07a2f','#d9b72b','#3f9d4f','#2b9bb5','#4f5bd5','#9b4fd5','#d54f9b','#7a746a'];
-function vRep(){const sp=spent(),e=Object.entries(sp).sort((a,b)=>b[1]-a[1]),tot=e.reduce((s,x)=>s+x[1],0);let a=0;
-const cg=e.map(([k,s],i)=>{const f=a/tot*100;a+=s;return `${COL[i%9]} ${f}% ${a/tot*100}%`}).join(',');
-return `<h2>Laporan bulan ini</h2><div class=card>${tot?`<div class=pie style="background:conic-gradient(${cg})"></div><p style="text-align:center"><small>Total pengeluaran</small><br><b class="big out">${fmt(tot)}</b></p><table>${e.map(([k,s],i)=>`<tr><td><span style="color:${COL[i%9]}">●</span> ${esc(k)}</td><td>${Math.round(s/tot*100)}%</td><td>${fmt(s)}</td></tr>`).join('')}</table>`:'<small>Belum ada pengeluaran bulan ini.</small>'}</div>
-<div class=card><div class=row><span>Pemasukan bulan ini</span><b class=in>${fmt(sum(S.tx.filter(x=>x.d.startsWith(today().slice(0,7))),'in'))}</b></div></div>`}
+function seg(m){const e=Object.entries(m).filter(([k,x])=>x!==0).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])),t=e.reduce((s,x)=>s+Math.abs(x[1]),0);if(!t)return '';
+return `<div class=sb>${e.map(([k,x],i)=>`<i style="width:${Math.abs(x)/t*100}%;background:${COL[i%9]}"></i>`).join('')}</div>${e.map(([k,x],i)=>`<div class=row><span><span style="color:${COL[i%9]}">●</span> ${esc(k)} <small>${Math.round(Math.abs(x)/t*100)}%</small></span><b class="${x<0?'out':''}">${fmt(x)}</b></div>`).join('')}`}
+function sec(title,a){if(!a.length)return `<div class=card><h3>${title}</h3><small>Belum ada data</small></div>`;
+const grp=(t,f)=>{const m={};a.filter(x=>x.t==t).forEach(x=>m[x[f]]=(m[x[f]]||0)+x.n);return m},wal={};a.forEach(x=>wal[x.w]=(wal[x.w]||0)+(x.t=='in'?x.n:-x.n));const i=sum(a,'in'),o=sum(a,'out');
+return `<div class=card><h3>${title}</h3><small>Total uang</small><div class="big ${i-o<0?'out':'in'}">${fmt(i-o)}</div>${seg(wal)}<hr><small>Total pemasukan</small><div class="big in">${fmt(i)}</div>${seg(grp('in','k'))}<hr><small>Total pengeluaran</small><div class="big out">${fmt(o)}</div>${seg(grp('out','k'))}</div>`}
+function vRep(){const n=new Date(),cm=today().slice(0,7),pm=iso(new Date(n.getFullYear(),n.getMonth()-1,1)).slice(0,7),mn=m=>new Date(m+'-01T00:00').toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+return `<h2>Laporan</h2>${sec('Keseluruhan',S.tx)}${sec('Bulan ini · '+mn(cm),S.tx.filter(x=>x.d.startsWith(cm)))}${sec('Bulan lalu · '+mn(pm),S.tx.filter(x=>x.d.startsWith(pm)))}`}
 function setB(i,val){const k=S.kat[i].n;+val>0?S.bud[k]=+val:delete S.bud[k];sv();render()}
 function vBud(){const sp=spent();return `<h2>Budget bulanan</h2><div class=card>${S.kat.map((k,i)=>k.t=='out'?[k,i]:0).filter(Boolean).map(([k,i])=>{const b=S.bud[k.n]||0,s=sp[k.n]||0,p=b?Math.round(s/b*100):0;
 return `<div style="padding:10px 0;border-bottom:1px solid var(--bg)"><div class=row style="border:0;padding:0"><b>${esc(k.n)}</b><small>${fmt(s)}${b?' / '+fmt(b):''}</small></div>${b?`<div class=bar><i style="width:${Math.min(p,100)}%;background:${p>100?'var(--r)':p>=80?'#e07a2f':'var(--g)'}"></i></div>${p>=80?`<small class=out>⚠️ ${p>100?'Melebihi budget':'Sudah '+p+'% dari budget'}</small>`:`<small>${p}% terpakai</small>`}`:''}<input type=number inputmode=numeric placeholder="Batas bulanan (Rp)" value="${b||''}" onchange="setB(${i},this.value)"></div>`}).join('')}</div>`}
